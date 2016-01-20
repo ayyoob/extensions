@@ -35,49 +35,66 @@ import java.util.List;
  * This class acts as am access point for all config parameters used within the mqtt authenticator.
  * this configuration is read from broker.xml
  * configuration:
- *
+ * <p/>
  * <authenticatorConfig>
- *	<Parameter name="hostURL">https://localhost:9443</Parameter>
- *	<Parameter name="username">admin</Parameter>
- *	<Parameter name="password">admin</Parameter>
- *	<Parameter name="scopes"></Parameter>
- *	<Parameter name="basicAuthenticator">org.wso2.carbon.andes.authentication.andes.CarbonBasedMQTTAuthenticator</Parameter>
- </authenticatorConfig>
+ * 	<Parameter name="hostURL">https://localhost:9443</Parameter>
+ * 	<Parameter name="username">admin</Parameter>
+ * 	<Parameter name="password">admin</Parameter>
+ * 	<Parameter name="scopes"></Parameter>
+ * 	<Parameter name="basicAuthenticator">org.wso2.carbon.andes.authentication.andes.CarbonBasedMQTTAuthenticator</Parameter>
+ * 	<Parameter name="tokenAuthenticator">org.wso2.carbon.andes.extensions.authentication.mqtt.oauth.impl.DefaultOAuth2TokenAuthenticator</Parameter>
+ * </authenticatorConfig>
  */
 public class MqttAuthenticationConfigurationManager {
 	private static final Log log = LogFactory.getLog(MqttAuthenticationConfigurationManager.class);
-	private static final String KEY_CONFIG = "transports/mqtt/security/authenticatorConfig/property[@name";
+	private static final String KEY_CONFIG =
+			"transports/mqtt/security/authenticatorConfig/property[@name";
+	private static final String DEFAULT_TOKEN_AUTHENTICATOR =
+			"org.wso2.carbon.andes.extensions.authentication.mqtt.oauth.impl" +
+					".DefaultOAuth2TokenAuthenticator";
+
 
 	/**
 	 * The key store used for Identity Server Host.
 	 */
-	private static final String HOST_CONFIG[] = {"authenticatorConfigHost", KEY_CONFIG + " = 'hostURL']", "https://localhost:9443"};
+	private static final String HOST_CONFIG[] =
+			{"authenticatorConfigHost", KEY_CONFIG + " = 'hostURL']", "https://localhost:9443"};
 
 	/**
 	 * The key store used for username to be used for Identity Server.
 	 */
-	private static final String USERNAME_CONFIG[] = {"authenticatorConfigUsername", KEY_CONFIG + " = 'username']", "admin"};
+	private static final String USERNAME_CONFIG[] =
+			{"authenticatorConfigUsername", KEY_CONFIG + " = 'username']", "admin"};
 
 	/**
 	 * The key store used for password to be used for Identity Server.
 	 */
-	private static final String PASSWORD_CONFIG[] = {"authenticatorConfigPassword", KEY_CONFIG + " = 'password']", "password"};
+	private static final String PASSWORD_CONFIG[] =
+			{"authenticatorConfigPassword", KEY_CONFIG + " = 'password']", "password"};
 
 	/**
-	 * The key store used for password to be used for Identity Server.
+	 * The key store used for basic authenticator class name to be used for Identity Server.
 	 */
-	private static final String CLASS_CONFIG[] = {"authenticatorConfigDefaultAuthenticator", KEY_CONFIG + " = 'basicAuthenticator']", ""};
+	private static final String BASIC_CLASS_CONFIG[] =
+			{"authenticatorConfigBasicAuthenticator", KEY_CONFIG + " = 'basicAuthenticator']", ""};
 
 	/**
-	 * The key store used for scopes to be used forIdentity Server .
+	 * The key store used for basic authenticator class name to be used for Identity Server.
 	 */
-	private static final String SCOPES_CONFIG[] = {"authenticatorConfigScopes", KEY_CONFIG + " = 'scopes']", ""};
+	private static final String TOKEN_CLASS_CONFIG[] =
+			{"authenticatorConfigTokenAuthenticator", KEY_CONFIG + " = 'tokenAuthenticator']", DEFAULT_TOKEN_AUTHENTICATOR};
+	/**
+	 * The key store used for scopes to be used for Identity Server .
+	 */
+	private static final String SCOPES_CONFIG[] =
+			{"authenticatorConfigScopes", KEY_CONFIG + " = 'scopes']", ""};
 
 
 	private URL hostUrl;
 	private String username;
 	private String password;
 	private String basicAuthenticatorClassName;
+	private String tokenAuthenticatorClassName;
 	private JKSStore jksKeyStore;
 	private JKSStore jksTrustStore;
 	private List<String> scopes;
@@ -89,7 +106,7 @@ public class MqttAuthenticationConfigurationManager {
 		return mqttAuthenticationConfigurationManager;
 	}
 
-	private MqttAuthenticationConfigurationManager(){
+	private MqttAuthenticationConfigurationManager() {
 	}
 
 	public synchronized void initConfig() {
@@ -106,26 +123,27 @@ public class MqttAuthenticationConfigurationManager {
 		}
 		username = getConfigValue(USERNAME_CONFIG);
 		password = getConfigValue(PASSWORD_CONFIG);
-		basicAuthenticatorClassName = getConfigValue(CLASS_CONFIG);
+		basicAuthenticatorClassName = getConfigValue(BASIC_CLASS_CONFIG);
+		tokenAuthenticatorClassName = getConfigValue(TOKEN_CLASS_CONFIG);
 		String scopeString = getConfigValue(SCOPES_CONFIG);
-		if(!scopeString.isEmpty()){
+		if (!scopeString.isEmpty()) {
 			scopes = Arrays.asList(scopeString.split(" "));
 		}
 
 	}
 
-	private MetaProperties getMetaProperties(String config[], Class<?> dataType){
+	private MetaProperties getMetaProperties(String config[], Class<?> dataType) {
 		return new ImmutableMetaProperties(config[0], config[1], config[2], dataType);
 	}
 
-	private String getConfigValue(String config[]){
+	private String getConfigValue(String config[]) {
 		MetaProperties metaProperties = getMetaProperties(config, String.class);
-		String configValue = AndesConfigurationManager.readValue(new MqttAuthenticationConfiguration(metaProperties));
+		String configValue = AndesConfigurationManager.readValue(
+				new MqttAuthenticationConfiguration(metaProperties));
 		return configValue.trim();
 	}
 
 	/**
-	 *
 	 * @return Identity Server URL
 	 */
 	public URL getHostUrl() {
@@ -133,7 +151,6 @@ public class MqttAuthenticationConfigurationManager {
 	}
 
 	/**
-	 *
 	 * @return username to connect with Identity Server
 	 */
 	public String getUsername() {
@@ -141,7 +158,6 @@ public class MqttAuthenticationConfigurationManager {
 	}
 
 	/**
-	 *
 	 * @return passowrd to connect with Identity Server
 	 */
 	public String getPassword() {
@@ -149,12 +165,21 @@ public class MqttAuthenticationConfigurationManager {
 	}
 
 	/**
-	 *
-	 * @return name of the authenticator to be executed if the password fields is exist in oauth authentcator
+	 * @return name of the authenticator to be executed if the password fields is exist in oauth
+	 * authentcator
 	 */
 	public String getBasicAuthenticatorClassName() {
 		return basicAuthenticatorClassName;
 	}
+
+	/**
+	 * @return name of the token authenticator to be executed. default will be using the WSO2
+	 * Token Validation Endpoint
+	 */
+	public String getTokenAuthenticatorClassName() {
+		return tokenAuthenticatorClassName;
+	}
+
 
 	public JKSStore getJksKeyStore() {
 		return jksKeyStore;
