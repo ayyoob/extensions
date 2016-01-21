@@ -38,7 +38,7 @@ public class MqttAuthenticator implements IAuthenticator {
 	private IAuthenticator basicAuthenticator;
 	private String tokenAuthenticatorClassName;
 	private TokenAuthenticator tokenAuthenticator;
-
+	private String oauthUsernameTag; //Default Value is "Bearer"
 	public MqttAuthenticator() {
 		initializeAuthenticator();
 	}
@@ -53,6 +53,7 @@ public class MqttAuthenticator implements IAuthenticator {
 
 		//read the class name of the authenticator that has to be executed when the password exist
 		basicAuthenticatorClassName = config.getBasicAuthenticatorClassName();
+		oauthUsernameTag = config.getOauthUsername();
 		try {
 			Class<? extends IAuthenticator> basicAuthenticatorClass = Class.forName(
 					basicAuthenticatorClassName).asSubclass(IAuthenticator.class);
@@ -76,12 +77,12 @@ public class MqttAuthenticator implements IAuthenticator {
 	}
 
 	@Override
-	public boolean checkValid(String token, String password) {
+	public boolean checkValid(String username, String token) {
 		//To Cater Basic and Oauth Authentication, if Password is not empty and if the basic
 		// authenticator is mentioned then it will execute the basic authenticator
-		if ((!password.isEmpty()) && (!basicAuthenticatorClassName.isEmpty())) {
+		if ((!oauthUsernameTag.equals(username)) && (!basicAuthenticatorClassName.isEmpty())) {
 			if (basicAuthenticator != null) {
-				return basicAuthenticator.checkValid(token, password);
+				return basicAuthenticator.checkValid(username, token);
 			}
 		}
 		return tokenAuthenticator.validateToken(token);

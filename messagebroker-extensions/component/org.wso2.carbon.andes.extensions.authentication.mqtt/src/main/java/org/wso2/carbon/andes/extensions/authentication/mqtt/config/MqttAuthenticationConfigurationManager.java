@@ -37,12 +37,16 @@ import java.util.List;
  * configuration:
  * <p/>
  * <authenticatorConfig>
- * 	<Parameter name="hostURL">https://localhost:9443</Parameter>
- * 	<Parameter name="username">admin</Parameter>
- * 	<Parameter name="password">admin</Parameter>
- * 	<Parameter name="scopes"></Parameter>
- * 	<Parameter name="basicAuthenticator">org.wso2.carbon.andes.authentication.andes.CarbonBasedMQTTAuthenticator</Parameter>
- * 	<Parameter name="tokenAuthenticator">org.wso2.carbon.andes.extensions.authentication.mqtt.oauth.impl.DefaultOAuth2TokenAuthenticator</Parameter>
+ * <Parameter name="hostURL">https://localhost:9443</Parameter>
+ * <Parameter name="username">admin</Parameter>
+ * <Parameter name="password">admin</Parameter>
+ * <Parameter name="scopes"></Parameter>
+ * <Parameter name="basicAuthenticator">org.wso2.carbon.andes.authentication.andes
+ * .CarbonBasedMQTTAuthenticator</Parameter>
+ *  <!-- Below parameters are optional-->
+ * <Parameter name="tokenAuthenticator">org.wso2.carbon.andes.extensions.authentication.mqtt
+ * .oauth.impl.DefaultOAuth2TokenAuthenticator</Parameter>
+ * <property name="oauthUsernameTag">Bearers</property>
  * </authenticatorConfig>
  */
 public class MqttAuthenticationConfigurationManager {
@@ -82,12 +86,18 @@ public class MqttAuthenticationConfigurationManager {
 	 * The key store used for basic authenticator class name to be used for Identity Server.
 	 */
 	private static final String TOKEN_CLASS_CONFIG[] =
-			{"authenticatorConfigTokenAuthenticator", KEY_CONFIG + " = 'tokenAuthenticator']", DEFAULT_TOKEN_AUTHENTICATOR};
+			{"authenticatorConfigTokenAuthenticator", KEY_CONFIG + " = 'tokenAuthenticator']",
+					DEFAULT_TOKEN_AUTHENTICATOR};
 	/**
 	 * The key store used for scopes to be used for Identity Server .
 	 */
 	private static final String SCOPES_CONFIG[] =
 			{"authenticatorConfigScopes", KEY_CONFIG + " = 'scopes']", ""};
+	/**
+	 * The key store used for default username pattern to be used for Oauth Identifier.
+	 */
+	private static final String OAUTH_USERNAME_CONFIG[] =
+			{"authenticatorConfigScopes", KEY_CONFIG + " = 'oauthUsernameTag']", "Bearer"};
 
 
 	private URL hostUrl;
@@ -95,6 +105,7 @@ public class MqttAuthenticationConfigurationManager {
 	private String password;
 	private String basicAuthenticatorClassName;
 	private String tokenAuthenticatorClassName;
+	private String oauthUsernameTag;
 	private JKSStore jksKeyStore;
 	private JKSStore jksTrustStore;
 	private List<String> scopes;
@@ -125,6 +136,7 @@ public class MqttAuthenticationConfigurationManager {
 		password = getConfigValue(PASSWORD_CONFIG);
 		basicAuthenticatorClassName = getConfigValue(BASIC_CLASS_CONFIG);
 		tokenAuthenticatorClassName = getConfigValue(TOKEN_CLASS_CONFIG);
+		oauthUsernameTag = getConfigValue(OAUTH_USERNAME_CONFIG);
 		String scopeString = getConfigValue(SCOPES_CONFIG);
 		if (!scopeString.isEmpty()) {
 			scopes = Arrays.asList(scopeString.split(" "));
@@ -178,6 +190,13 @@ public class MqttAuthenticationConfigurationManager {
 	 */
 	public String getTokenAuthenticatorClassName() {
 		return tokenAuthenticatorClassName;
+	}
+
+	/**
+	 * @return name of the oauth Username that used to verify whether the token sent is a OAUTH Token. default will be "Bearer"
+	 */
+	public String getOauthUsername() {
+		return oauthUsernameTag;
 	}
 
 
